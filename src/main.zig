@@ -1,10 +1,9 @@
 const std = @import("std");
 const docer = @import("docer");
 const print = std.debug.print;
-const re = @import("mvzr");
 const Allocator = std.mem.Allocator;
 
-const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/python_app";
+const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/python_test";
 
 const FileTypes = enum {
     py,
