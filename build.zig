@@ -11,7 +11,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const mvzr = b.dependency("mvzr", .{});
     const exe = b.addExecutable(.{
         .name = "docer",
         .root_module = b.createModule(.{
@@ -22,12 +21,9 @@ pub fn build(b: *std.Build) void {
 
             .imports = &.{
                 .{ .name = "docer", .module = mod },
-                .{ .name = "mvzr", .module = mvzr.module("mvzr") },
             },
         }),
     });
-
-    exe.root_module.addImport("mvzr", mvzr.module("mvzr"));
 
     b.installArtifact(exe);
 
