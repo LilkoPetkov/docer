@@ -11,6 +11,13 @@ const FileTypes = enum {
     zig,
 };
 
+const PythonObjectContext = struct {
+    func_found: bool = false,
+    closing_func_bracket_found: bool = false,
+    func_recorded: bool = false,
+    doc_string_found: bool = false,
+};
+
 const File = struct {
     file_type: FileTypes, // py / go / zig
     fd: std.fs.File,
@@ -82,26 +89,27 @@ fn processFile(allocator: Allocator, file: *File) !void {
     var func_doc_string: std.ArrayList(u8) = try .initCapacity(allocator, 256);
     defer func_doc_string.deinit(allocator);
 
-    var func_found: bool = false;
-    var closing_func_bracket_found: bool = false;
-    var func_recorded: bool = false;
-    var doc_string_found: bool = false;
+    // var func_found: bool = false;
+    // var closing_func_bracket_found: bool = false;
+    // var func_recorded: bool = false;
+    // var doc_string_found: bool = false;
+    var context: PythonObjectContext = .{};
 
     for (file_content_buf, 0..) |byte, idx| {
-        if (func_recorded) {
+        if (context.func_recorded) {
             if (byte != '"' and
                 byte != ' ' and
                 byte != 0x0A and
-                !doc_string_found)
+                !context.doc_string_found)
             {
-                func_recorded = false;
+                context.func_recorded = false;
             } else if (byte == '"' and
                 idx + 2 < file_content_buf.len and
                 file_content_buf[idx + 1] == '"' and
                 file_content_buf[idx + 2] == '"')
             {
-                if (!doc_string_found) {
-                    doc_string_found = true;
+                if (!context.doc_string_found) {
+                    context.doc_string_found = true;
                     try func_doc_string.append(allocator, byte);
                 } else {
                     try func_doc_string.appendNTimes(allocator, 0x22, 3);
@@ -115,25 +123,25 @@ fn processFile(allocator: Allocator, file: *File) !void {
                     const pfad: PythonFuncAndDoc = .{ .docstring = dc, .func = func };
                     try python_data.append(allocator, pfad);
 
-                    doc_string_found = false;
+                    context.doc_string_found = false;
                 }
-            } else if (doc_string_found) {
+            } else if (context.doc_string_found) {
                 try func_doc_string.append(allocator, byte);
             }
 
             continue;
         }
 
-        if (func_found and byte == ')') {
+        if (context.func_found and byte == ')') {
             try func_data.append(allocator, byte);
-            closing_func_bracket_found = true;
-        } else if (func_found and !closing_func_bracket_found) {
+            context.closing_func_bracket_found = true;
+        } else if (context.func_found and !context.closing_func_bracket_found) {
             try func_data.append(allocator, byte);
-        } else if (func_found and closing_func_bracket_found) {
+        } else if (context.func_found and context.closing_func_bracket_found) {
             if (byte != ':') try func_data.append(allocator, byte) else {
-                func_found = false;
-                closing_func_bracket_found = false;
-                func_recorded = true;
+                context.func_found = false;
+                context.closing_func_bracket_found = false;
+                context.func_recorded = true;
             }
         }
 
@@ -142,10 +150,10 @@ fn processFile(allocator: Allocator, file: *File) !void {
             file_content_buf[idx + 1] == 'e' and
             file_content_buf[idx + 2] == 'f' and
             file_content_buf[idx + 3] == ' ' and
-            !func_found)
+            !context.func_found)
         {
             try func_data.append(allocator, byte);
-            func_found = true;
+            context.func_found = true;
         }
     }
 
