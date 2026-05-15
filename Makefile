@@ -1,15 +1,19 @@
-.PHONY: build-app-small build-app-safe build-app-fast run build-and-run
+.PHONY: build-small build-safe build-fast run build-and-run build-test
 
-build-and-run: build-app-safe run
+build-run: build-safe run
+	./zig-out/bin/docer
 
-build-app-small:
+run:
+	./zig-out/bin/docer
+
+test:
+	zig build -Doptimize=ReleaseSafe test --summary new
+
+build-small:
 	zig build -Doptimize=ReleaseSmall
 
-build-app-safe:
+build-safe:
 	zig build -Doptimize=ReleaseSafe
 
-build-app-fast:
+build-fast:
 	zig build -Doptimize=ReleaseFast
-
-run: 
-	./zig-out/bin/docer
