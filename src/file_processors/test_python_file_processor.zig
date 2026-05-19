@@ -16,7 +16,7 @@ test "test function with docstring" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def fib(x: int) -> int";
     const expected_docstring =
@@ -44,7 +44,7 @@ test "test function without docstring" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def main() -> None";
 
@@ -64,7 +64,7 @@ test "test function with docstring as last entry" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def main() -> None";
     const expected_docstring =
@@ -92,7 +92,7 @@ test "test multiple functions with docstrings" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def test01() -> None";
@@ -144,7 +144,7 @@ test "test multiple functions without docstrings" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def test01() -> None";
@@ -178,7 +178,7 @@ test "test single function multiline string no docstring" {
         .target_file = null,
     };
 
-    var python_data = try pfp.processFile(ta, &f);
+    var python_data = try pfp.processPythonFile(ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def main() -> None";

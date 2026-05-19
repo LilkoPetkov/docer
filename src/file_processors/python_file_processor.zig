@@ -5,7 +5,7 @@ const t = std.testing;
 
 const s = @import("../schemas/schemas.zig");
 
-pub fn processFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.PythonFuncAndDoc) {
+pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.PythonFuncAndDoc) {
     const file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
