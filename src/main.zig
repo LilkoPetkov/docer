@@ -12,8 +12,8 @@ test {
     std.testing.refAllDecls(t);
 }
 
-const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/python_test";
-// const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/go_test";
+// const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/python_test";
+const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/go_test";
 
 pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
@@ -55,7 +55,20 @@ pub fn main() !void {
 
             python_data.deinit(allocator);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".go")) {
-            try gfp.processGoFile(allocator, &f);
+            var go_data = try gfp.processGoFile(allocator, &f);
+
+            for (go_data.items) |item| {
+                if (item.func != null) {
+                    print("{s}", .{item.func.?});
+                    allocator.free(item.func.?);
+                }
+                if (item.docstring != null) {
+                    print("{s}\n", .{item.docstring.?});
+                    allocator.free(item.docstring.?);
+                }
+            }
+
+            go_data.deinit(allocator);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".zig")) {
             print("It is a zig file\n", .{});
         }
