@@ -1,11 +1,5 @@
 const std = @import("std");
 
-pub const FileTypes = enum {
-    py,
-    go,
-    zig,
-};
-
 pub const PythonObjectContext = struct {
     func_found: bool = false,
     closing_func_bracket_found: bool = false,
@@ -24,6 +18,11 @@ pub const PythonFuncAndDoc = struct {
     docstring: ?[]u8,
 };
 
-pub const PythonData = struct {
-    data: std.ArrayList(PythonFuncAndDoc),
+pub const GoFuncAndDefinition = struct {
+    func: ?[]u8,
+    docstring: ?[]u8,
 };
+
+// pub const PythonData = struct {
+//     data: std.ArrayList(PythonFuncAndDoc),
+// };
