@@ -7,6 +7,12 @@ pub const PythonObjectContext = struct {
     doc_string_found: bool = false,
 };
 
+pub const GoObjectContext = struct {
+    func_found: bool = false,
+    comment_or_fd_found: bool = false,
+    comment_func_found: bool = false,
+};
+
 pub const File = struct {
     fd: std.fs.File,
     target_file: ?std.fs.File,

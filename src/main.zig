@@ -7,13 +7,15 @@ const s = @import("schemas/schemas.zig");
 const pfp = @import("file_processors/python_file_processor.zig");
 const gfp = @import("file_processors/go_file_processor.zig");
 
-const t = @import("file_processors/test_python_file_processor.zig");
+const python_tests = @import("file_processors/test_python_file_processor.zig");
+const go_tests = @import("file_processors/test_go_file_processor.zig");
 test {
-    std.testing.refAllDecls(t);
+    std.testing.refAllDecls(python_tests);
+    std.testing.refAllDecls(go_tests);
 }
 
-// const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/python_test";
-const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/go_test";
+const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/tests";
+// const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/go_test";
 
 pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
@@ -58,13 +60,13 @@ pub fn main() !void {
             var go_data = try gfp.processGoFile(allocator, &f);
 
             for (go_data.items) |item| {
-                if (item.func != null) {
-                    print("{s}", .{item.func.?});
-                    allocator.free(item.func.?);
-                }
                 if (item.docstring != null) {
-                    print("{s}\n", .{item.docstring.?});
+                    print("{s}", .{item.docstring.?});
                     allocator.free(item.docstring.?);
+                }
+                if (item.func != null) {
+                    print("{s}\n", .{item.func.?});
+                    allocator.free(item.func.?);
                 }
             }
 

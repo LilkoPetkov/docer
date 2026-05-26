@@ -1,7 +1,6 @@
 const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
-const t = std.testing;
 
 const s = @import("../schemas/schemas.zig");
 

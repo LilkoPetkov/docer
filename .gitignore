@@ -1,4 +1,4 @@
 .zig-cache/
 zig-out/
 *.o
-python_test/langflow
+tests/python_test/langflow
