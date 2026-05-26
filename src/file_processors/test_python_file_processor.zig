@@ -7,7 +7,7 @@ const pfp = @import("python_file_processor.zig");
 test "test function with docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_single_function_ds.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_ds.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{
@@ -35,7 +35,7 @@ test "test function with docstring" {
 test "test function without docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_single_function_no_ds.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_no_ds.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{
@@ -55,7 +55,7 @@ test "test function without docstring" {
 test "test function with docstring as last entry" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_single_function_last_entry_ds.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_last_entry_ds.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{
@@ -83,7 +83,7 @@ test "test function with docstring as last entry" {
 test "test multiple functions with docstrings" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_multiple_functions_with_doc_strings.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_multiple_functions_with_doc_strings.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{
@@ -135,7 +135,7 @@ test "test multiple functions with docstrings" {
 test "test multiple functions without docstrings" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_multiple_functions_wihtout_docstrings.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_multiple_functions_wihtout_docstrings.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{
@@ -169,7 +169,7 @@ test "test multiple functions without docstrings" {
 test "test single function multiline string no docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("python_test/test_single_function_no_ds_ml_string.py", .{});
+    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_no_ds_ml_string.py", .{});
     const file_size: usize = (try file.stat()).size;
 
     var f: s.File = .{

@@ -19,10 +19,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
 
     var data: std.ArrayList(s.GoFuncAndDefinition) = try .initCapacity(allocator, 1024);
 
-    // context vars
-    var func_found: bool = false;
-    var comment_or_fd_found = false;
-    var comment_func_found = false;
+    var ctx: s.GoObjectContext = .{};
 
     for (file_content_buf, 0..) |byte, idx| {
         if (byte == 0x2F and
@@ -30,8 +27,8 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
             file_content_buf[idx + 1] == 0x2F)
         {
             try current_fd.append(allocator, byte);
-            comment_or_fd_found = true;
-        } else if (comment_or_fd_found) {
+            ctx.comment_or_fd_found = true;
+        } else if (ctx.comment_or_fd_found) {
             try current_fd.append(allocator, byte);
 
             if (byte == 0x0A) {
@@ -47,14 +44,14 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                     file_content_buf[idx + 4] == 0x63 and
                     file_content_buf[idx + 5] == 0x20)
                 {
-                    comment_func_found = true;
-                    comment_or_fd_found = false;
+                    ctx.comment_func_found = true;
+                    ctx.comment_or_fd_found = false;
                 } else {
                     current_fd.clearAndFree(allocator);
-                    comment_or_fd_found = false;
+                    ctx.comment_or_fd_found = false;
                 }
             }
-        } else if (comment_func_found or
+        } else if (ctx.comment_func_found or
             (byte == 0x66 and
                 idx + 4 < file_content_buf.len and
                 file_content_buf[idx + 1] == 0x75 and
@@ -63,15 +60,21 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                 file_content_buf[idx + 4] == 0x20))
         {
             try current_func.append(allocator, byte);
-            comment_func_found = false;
-            func_found = true;
-        } else if (func_found) {
+            ctx.comment_func_found = false;
+            ctx.func_found = true;
+        } else if (ctx.func_found) {
             if (byte == 0x7B and
                 idx + 1 < file_content_buf.len and
-                file_content_buf[idx + 1] == 0x0A)
+                (file_content_buf[idx + 1] == 0x0A or
+                    (file_content_buf[idx + 1] == 0x7D and
+                        idx + 2 < file_content_buf.len and
+                        file_content_buf[idx + 2] == 0x0A)))
             {
                 try current_func.append(allocator, '\n');
-                const func_copy = try allocator.dupe(u8, current_func.items);
+
+                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[2]u8{ '\n', ' ' });
+                const func_copy = try allocator.dupe(u8, stripped_val);
+
                 current_func.clearAndFree(allocator);
 
                 var fd_copy: ?[]u8 = null;
@@ -80,8 +83,8 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                     current_fd.clearAndFree(allocator);
                 }
 
-                func_found = false;
-                comment_func_found = false;
+                ctx.func_found = false;
+                ctx.comment_func_found = false;
 
                 const go_file: s.GoFuncAndDefinition = .{
                     .func = func_copy,
