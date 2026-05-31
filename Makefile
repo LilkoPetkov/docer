@@ -1,4 +1,4 @@
-.PHONY: build-small build-safe build-fast run build-and-run build-test
+.PHONY: build-small build-safe build-fast run build-and-run build-test clean
 
 build-run: build-safe run
 	./zig-out/bin/docer
@@ -17,3 +17,8 @@ build-safe:
 
 build-fast:
 	zig build -Doptimize=ReleaseFast
+
+clean:
+	rm -r .zig-cache
+	rm -r zig-out
+	
