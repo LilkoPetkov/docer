@@ -14,8 +14,7 @@ test {
     std.testing.refAllDecls(go_tests);
 }
 
-const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/tests";
-// const TARGET_DIRECTORY: []const u8 = "/home/lpetkov/Tasks/zig_tasks/docer/go_test";
+const TARGET_DIRECTORY: []const u8 = "./tests";
 
 pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
