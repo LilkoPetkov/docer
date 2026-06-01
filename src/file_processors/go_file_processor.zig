@@ -55,6 +55,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
 
+    var ctx: s.GoObjectContext = .{};
     const check_ctx: goByteChecks = .{ .file_content_buf = &file_content_buf };
 
     var current_func: std.ArrayList(u8) = try .initCapacity(allocator, 64);
@@ -63,8 +64,6 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
     defer current_fd.deinit(allocator);
 
     var data: std.ArrayList(s.GoFuncAndDefinition) = try .initCapacity(allocator, 1024);
-
-    var ctx: s.GoObjectContext = .{};
 
     for (file_content_buf, 0..) |byte, idx| {
         if (check_ctx.isComment(byte, idx)) {
