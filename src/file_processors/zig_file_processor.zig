@@ -103,12 +103,13 @@ pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.Func
             func_found = true;
         } else if (func_found) {
             if (check_ctx.isFuncEnd(byte, idx)) {
+                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
                 func_found = false;
 
                 const fd = try allocator.dupe(u8, current_fd.items);
                 current_fd.clearAndFree(allocator);
 
-                const func = try allocator.dupe(u8, current_func.items);
+                const func = try allocator.dupe(u8, stripped_val);
                 current_func.clearAndFree(allocator);
 
                 const zig_st: s.FuncAndDefinition = .{ .docstring = fd, .func = func };

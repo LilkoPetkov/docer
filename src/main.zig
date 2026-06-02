@@ -10,9 +10,11 @@ const zfp = @import("file_processors/zig_file_processor.zig");
 
 const python_tests = @import("file_processors/test_python_file_processor.zig");
 const go_tests = @import("file_processors/test_go_file_processor.zig");
+const zig_tests = @import("file_processors/test_zig_file_processor.zig");
 test {
     std.testing.refAllDecls(python_tests);
     std.testing.refAllDecls(go_tests);
+    std.testing.refAllDecls(zig_tests);
 }
 
 const TARGET_DIRECTORY: []const u8 = "./tests";

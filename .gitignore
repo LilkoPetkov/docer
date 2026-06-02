@@ -3,3 +3,4 @@ zig-out/
 *.o
 tests/python_test/langflow
 tests/go_test/external-secrets
+tests/zig_tests/zig-core-utils
