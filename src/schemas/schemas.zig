@@ -19,12 +19,7 @@ pub const File = struct {
     file_size: u64,
 };
 
-pub const PythonFuncAndDoc = struct {
-    func: ?[]u8,
-    docstring: ?[]u8,
-};
-
-pub const GoFuncAndDefinition = struct {
+pub const FuncAndDefinition = struct {
     func: ?[]u8,
     docstring: ?[]u8,
 };

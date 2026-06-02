@@ -6,6 +6,7 @@ const Allocator = std.mem.Allocator;
 const s = @import("schemas/schemas.zig");
 const pfp = @import("file_processors/python_file_processor.zig");
 const gfp = @import("file_processors/go_file_processor.zig");
+const zfp = @import("file_processors/zig_file_processor.zig");
 
 const python_tests = @import("file_processors/test_python_file_processor.zig");
 const go_tests = @import("file_processors/test_go_file_processor.zig");
@@ -71,7 +72,20 @@ pub fn main() !void {
 
             go_data.deinit(allocator);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".zig")) {
-            print("It is a zig file\n", .{});
+            var zig_data = try zfp.processZigFile(allocator, &f);
+
+            for (zig_data.items) |item| {
+                if (item.docstring != null) {
+                    print("{s}", .{item.docstring.?});
+                    allocator.free(item.docstring.?);
+                }
+                if (item.docstring != null) {
+                    print("{s}\n", .{item.func.?});
+                    allocator.free(item.func.?);
+                }
+            }
+
+            zig_data.deinit(allocator);
         }
 
         fd.close();
