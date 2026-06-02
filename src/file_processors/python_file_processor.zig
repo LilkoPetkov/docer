@@ -4,12 +4,12 @@ const Allocator = std.mem.Allocator;
 
 const s = @import("../schemas/schemas.zig");
 
-pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.PythonFuncAndDoc) {
+pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
     const file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
 
-    var python_data: std.ArrayList(s.PythonFuncAndDoc) = try .initCapacity(allocator, 1024);
+    var python_data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
     var func_data: std.ArrayList(u8) = try .initCapacity(allocator, 32);
     defer func_data.deinit(allocator);
     var func_doc_string: std.ArrayList(u8) = try .initCapacity(allocator, 256);
@@ -26,7 +26,7 @@ pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.P
             {
                 const func: []u8 = try allocator.dupe(u8, func_data.items);
                 func_data.clearAndFree(allocator);
-                const pfad: s.PythonFuncAndDoc = .{ .docstring = null, .func = func };
+                const pfad: s.FuncAndDefinition = .{ .docstring = null, .func = func };
                 try python_data.append(allocator, pfad);
 
                 context.func_recorded = false;
@@ -47,7 +47,7 @@ pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.P
                     func_data.clearAndFree(allocator);
                     func_doc_string.clearAndFree(allocator);
 
-                    const pfad: s.PythonFuncAndDoc = .{ .docstring = dc, .func = func };
+                    const pfad: s.FuncAndDefinition = .{ .docstring = dc, .func = func };
                     try python_data.append(allocator, pfad);
 
                     context.doc_string_found = false;

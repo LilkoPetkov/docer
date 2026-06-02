@@ -50,11 +50,12 @@ pub const goByteChecks = struct {
     }
 };
 
-pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFuncAndDefinition) {
+pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
 
+    var ctx: s.GoObjectContext = .{};
     const check_ctx: goByteChecks = .{ .file_content_buf = &file_content_buf };
 
     var current_func: std.ArrayList(u8) = try .initCapacity(allocator, 64);
@@ -62,9 +63,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
     var current_fd: std.ArrayList(u8) = try .initCapacity(allocator, 128);
     defer current_fd.deinit(allocator);
 
-    var data: std.ArrayList(s.GoFuncAndDefinition) = try .initCapacity(allocator, 1024);
-
-    var ctx: s.GoObjectContext = .{};
+    var data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
 
     for (file_content_buf, 0..) |byte, idx| {
         if (check_ctx.isComment(byte, idx)) {
@@ -92,9 +91,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
             ctx.func_found = true;
         } else if (ctx.func_found) {
             if (check_ctx.isFuncEnd(byte, idx)) {
-                try current_func.append(allocator, '\n');
-
-                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[2]u8{ '\n', ' ' });
+                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
                 const func_copy = try allocator.dupe(u8, stripped_val);
 
                 current_func.clearAndFree(allocator);
@@ -108,7 +105,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                 ctx.func_found = false;
                 ctx.comment_func_found = false;
 
-                const go_file: s.GoFuncAndDefinition = .{
+                const go_file: s.FuncAndDefinition = .{
                     .func = func_copy,
                     .docstring = if (fd_copy != null) fd_copy else null,
                 };
