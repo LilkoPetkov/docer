@@ -56,3 +56,75 @@ test "test functions without function definition" {
     if (zig_data.items[2].func != null) try t.expect(std.mem.eql(u8, zig_data.items[2].func.?, third_expected_function));
     if (zig_data.items[2].func != null) ta.free(zig_data.items[2].func.?);
 }
+
+test "test function with function definition" {
+    const ta = std.heap.page_allocator;
+
+    const file = try std.fs.cwd().openFile("tests/zig_tests/test_single_func_fd.zig", .{});
+    const file_size: usize = (try file.stat()).size;
+
+    var f: s.File = .{
+        .fd = file,
+        .file_size = file_size,
+        .target_file = null,
+    };
+
+    var zig_data = try zfp.processZigFile(ta, &f);
+    defer zig_data.deinit(ta);
+
+    const expected_function = "pub fn main() !void";
+    const expected_fd =
+        \\/// This is a multiline function definition
+        \\///
+        \\/// Args:
+        \\///  None
+        \\/// Returns:
+        \\///  Void
+    ++ "\n";
+
+    if (zig_data.items[0].func != null) try t.expect(std.mem.eql(u8, zig_data.items[0].func.?, expected_function));
+    if (zig_data.items[0].func != null) ta.free(zig_data.items[0].func.?);
+    if (zig_data.items[0].docstring != null) try t.expect(std.mem.eql(u8, zig_data.items[0].docstring.?, expected_fd));
+    if (zig_data.items[0].docstring != null) ta.free(zig_data.items[0].docstring.?);
+}
+
+test "test functions with function definitions" {
+    const ta = std.heap.page_allocator;
+
+    const file = try std.fs.cwd().openFile("tests/zig_tests/test_multiple_funcs_fd.zig", .{});
+    const file_size: usize = (try file.stat()).size;
+
+    var f: s.File = .{
+        .fd = file,
+        .file_size = file_size,
+        .target_file = null,
+    };
+
+    var zig_data = try zfp.processZigFile(ta, &f);
+    defer zig_data.deinit(ta);
+
+    const first_expected_function = "pub fn testMain() !void";
+    const first_expected_fd =
+        \\/// This is a multiline function definition
+        \\///
+        \\/// Args:
+        \\///  None
+        \\/// Returns:
+        \\///  Void
+    ++ "\n";
+
+    const second_expected_function = "pub fn testFunc(x: []const u8, y: []const u8) !void";
+    const second_expected_fd =
+        \\/// This is a test function, it makes no sense
+    ++ "\n";
+
+    if (zig_data.items[0].func != null) try t.expect(std.mem.eql(u8, zig_data.items[0].func.?, first_expected_function));
+    if (zig_data.items[0].func != null) ta.free(zig_data.items[0].func.?);
+    if (zig_data.items[0].docstring != null) try t.expect(std.mem.eql(u8, zig_data.items[0].docstring.?, first_expected_fd));
+    if (zig_data.items[0].docstring != null) ta.free(zig_data.items[0].docstring.?);
+
+    if (zig_data.items[1].func != null) try t.expect(std.mem.eql(u8, zig_data.items[1].func.?, second_expected_function));
+    if (zig_data.items[1].func != null) ta.free(zig_data.items[1].func.?);
+    if (zig_data.items[1].docstring != null) try t.expect(std.mem.eql(u8, zig_data.items[1].docstring.?, second_expected_fd));
+    if (zig_data.items[1].docstring != null) ta.free(zig_data.items[1].docstring.?);
+}
