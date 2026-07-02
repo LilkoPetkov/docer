@@ -4,6 +4,8 @@ const print = std.debug.print;
 const Allocator = std.mem.Allocator;
 
 const s = @import("schemas/schemas.zig");
+const report_generator = @import("report_generator/md_report_generator.zig");
+
 const pfp = @import("file_processors/python_file_processor.zig");
 const gfp = @import("file_processors/go_file_processor.zig");
 const zfp = @import("file_processors/zig_file_processor.zig");
@@ -30,8 +32,10 @@ pub fn main() !void {
     var it = try dir.walk(allocator);
     defer it.deinit();
 
-    const target_file: std.fs.File = try dir.createFile("REPORT.md", .{});
+    const target_file: std.fs.File = try std.fs.cwd().createFile("REPORT.md", .{});
     defer target_file.close();
+
+    try report_generator.writeReportHeader(.go, target_file);
 
     while (try it.next()) |file| {
         const file_name: []const u8 = file.basename;
@@ -47,14 +51,10 @@ pub fn main() !void {
         if (std.ascii.endsWithIgnoreCase(file_name, ".py")) {
             var python_data = try pfp.processPythonFile(allocator, &f);
             for (python_data.items) |item| {
-                if (item.func != null) {
-                    print("{s}\n", .{item.func.?});
-                    allocator.free(item.func.?);
-                }
-                if (item.docstring != null) {
-                    print("{s}\n", .{item.docstring.?});
-                    allocator.free(item.docstring.?);
-                }
+                try report_generator.generateReport(allocator, item, target_file);
+
+                if (item.func != null) allocator.free(item.func.?);
+                if (item.docstring != null) allocator.free(item.docstring.?);
             }
 
             python_data.deinit(allocator);
@@ -62,14 +62,10 @@ pub fn main() !void {
             var go_data = try gfp.processGoFile(allocator, &f);
 
             for (go_data.items) |item| {
-                if (item.docstring != null) {
-                    print("{s}", .{item.docstring.?});
-                    allocator.free(item.docstring.?);
-                }
-                if (item.func != null) {
-                    print("{s}\n", .{item.func.?});
-                    allocator.free(item.func.?);
-                }
+                try report_generator.generateReport(allocator, item, target_file);
+
+                if (item.docstring != null) allocator.free(item.docstring.?);
+                if (item.func != null) allocator.free(item.func.?);
             }
 
             go_data.deinit(allocator);
@@ -77,14 +73,10 @@ pub fn main() !void {
             var zig_data = try zfp.processZigFile(allocator, &f);
 
             for (zig_data.items) |item| {
-                if (item.docstring != null) {
-                    print("{s}", .{item.docstring.?});
-                    allocator.free(item.docstring.?);
-                }
-                if (item.docstring != null) {
-                    print("{s}\n", .{item.func.?});
-                    allocator.free(item.func.?);
-                }
+                try report_generator.generateReport(allocator, item, target_file);
+
+                if (item.docstring != null) allocator.free(item.docstring.?);
+                if (item.docstring != null) allocator.free(item.func.?);
             }
 
             zig_data.deinit(allocator);

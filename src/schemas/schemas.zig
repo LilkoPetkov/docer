@@ -24,6 +24,8 @@ pub const FuncAndDefinition = struct {
     docstring: ?[]u8,
 };
 
+pub const FileTypes = enum(u8) { go, python, zig };
+
 // pub const PythonData = struct {
 //     data: std.ArrayList(PythonFuncAndDoc),
 // };
