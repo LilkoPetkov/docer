@@ -12,7 +12,11 @@ test "test function without function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var go_data = try gfp.processGoFile(ta, &f);
@@ -32,7 +36,11 @@ test "test function with function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var go_data = try gfp.processGoFile(ta, &f);
@@ -56,7 +64,11 @@ test "test functions without function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var go_data = try gfp.processGoFile(ta, &f);
@@ -85,7 +97,11 @@ test "test functions with function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var go_data = try gfp.processGoFile(ta, &f);

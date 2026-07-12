@@ -1,10 +1,12 @@
 const std = @import("std");
 const docer = @import("docer");
 const print = std.debug.print;
+const log = std.log;
 const Allocator = std.mem.Allocator;
 
 const s = @import("schemas/schemas.zig");
 const report_generator = @import("report_generator/md_report_generator.zig");
+const tf_manager = @import("report_generator/target_file_manager.zig");
 
 const pfp = @import("file_processors/python_file_processor.zig");
 const gfp = @import("file_processors/go_file_processor.zig");
@@ -32,10 +34,30 @@ pub fn main() !void {
     var it = try dir.walk(allocator);
     defer it.deinit();
 
-    const target_file: std.fs.File = try std.fs.cwd().createFile("REPORT.md", .{});
-    defer target_file.close();
+    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}.md", .{std.time.timestamp()});
+    var target_dir = std.fs.cwd().makeOpenPath(dir_name, .{}) catch |err| {
+        log.err("Report directory could not be created: {}", .{err});
+        return err;
+    };
+    defer target_dir.close();
+    allocator.free(dir_name);
 
-    try report_generator.writeReportHeader(.go, target_file);
+    const target_files: s.TargetFiles = .{
+        .go_target_file = try target_dir.createFile("go_report.md", .{}),
+        .py_target_file = try target_dir.createFile("python_report.md", .{}),
+        .zig_target_file = try target_dir.createFile("zig_report.md", .{}),
+    };
+    defer target_files.go_target_file.?.close();
+    defer target_files.py_target_file.?.close();
+    defer target_files.zig_target_file.?.close();
+
+    try report_generator.writeReportHeader(.go, target_files.go_target_file.?);
+    try report_generator.writeReportHeader(.zig, target_files.zig_target_file.?);
+    try report_generator.writeReportHeader(.python, target_files.py_target_file.?);
+
+    var python_target_file_created: bool = false;
+    var go_target_file_created: bool = false;
+    var zig_target_file_created: bool = false;
 
     while (try it.next()) |file| {
         const file_name: []const u8 = file.basename;
@@ -45,13 +67,16 @@ pub fn main() !void {
         var f: s.File = .{
             .fd = fd,
             .file_size = file_size,
-            .target_file = target_file,
+            .target_files = target_files,
         };
 
         if (std.ascii.endsWithIgnoreCase(file_name, ".py")) {
+            python_target_file_created = true;
+
             var python_data = try pfp.processPythonFile(allocator, &f);
+
             for (python_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_file);
+                try report_generator.generateReport(allocator, item, target_files, .python);
 
                 if (item.func != null) allocator.free(item.func.?);
                 if (item.docstring != null) allocator.free(item.docstring.?);
@@ -59,29 +84,41 @@ pub fn main() !void {
 
             python_data.deinit(allocator);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".go")) {
+            go_target_file_created = true;
+
             var go_data = try gfp.processGoFile(allocator, &f);
 
             for (go_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_file);
+                try report_generator.generateReport(allocator, item, target_files, .go);
 
-                if (item.docstring != null) allocator.free(item.docstring.?);
                 if (item.func != null) allocator.free(item.func.?);
+                if (item.docstring != null) allocator.free(item.docstring.?);
             }
 
             go_data.deinit(allocator);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".zig")) {
+            zig_target_file_created = true;
+
             var zig_data = try zfp.processZigFile(allocator, &f);
 
             for (zig_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_file);
+                try report_generator.generateReport(allocator, item, target_files, .zig);
 
+                if (item.func != null) allocator.free(item.func.?);
                 if (item.docstring != null) allocator.free(item.docstring.?);
-                if (item.docstring != null) allocator.free(item.func.?);
             }
 
             zig_data.deinit(allocator);
         }
 
         fd.close();
+    }
+
+    if (!python_target_file_created) {
+        try tf_manager.deleteUnusedTargetFiles(target_dir, "python_report.md");
+    } else if (!go_target_file_created) {
+        try tf_manager.deleteUnusedTargetFiles(target_dir, "go_report.md");
+    } else if (!zig_target_file_created) {
+        try tf_manager.deleteUnusedTargetFiles(target_dir, "zig_report.md");
     }
 }

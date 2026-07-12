@@ -12,7 +12,11 @@ test "test function without function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var zig_data = try zfp.processZigFile(ta, &f);
@@ -32,7 +36,11 @@ test "test functions without function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var zig_data = try zfp.processZigFile(ta, &f);
@@ -66,7 +74,11 @@ test "test function with function definition" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var zig_data = try zfp.processZigFile(ta, &f);
@@ -97,7 +109,11 @@ test "test functions with function definitions" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var zig_data = try zfp.processZigFile(ta, &f);

@@ -13,9 +13,15 @@ pub const GoObjectContext = struct {
     comment_func_found: bool = false,
 };
 
+pub const TargetFiles = struct {
+    py_target_file: ?std.fs.File,
+    go_target_file: ?std.fs.File,
+    zig_target_file: ?std.fs.File,
+};
+
 pub const File = struct {
     fd: std.fs.File,
-    target_file: ?std.fs.File,
+    target_files: TargetFiles,
     file_size: u64,
 };
 

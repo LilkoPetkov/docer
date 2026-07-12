@@ -2,7 +2,6 @@
 .DEFAULT_GOAL := help
 
 build-run: build-safe run ## Build and run the binary with ReleaseSafe flag
-	./zig-out/bin/docer
 
 run: ## Run the built binary
 	./zig-out/bin/docer

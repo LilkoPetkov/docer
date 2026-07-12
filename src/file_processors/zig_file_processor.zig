@@ -104,15 +104,20 @@ pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.Func
         } else if (func_found) {
             if (check_ctx.isFuncEnd(byte, idx)) {
                 const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
+                const func_copy = try allocator.dupe(u8, stripped_val);
+                current_func.clearAndFree(allocator);
                 func_found = false;
 
-                const fd = try allocator.dupe(u8, current_fd.items);
-                current_fd.clearAndFree(allocator);
+                var fd_copy: ?[]u8 = null;
+                if (current_fd.items.len > 0) {
+                    fd_copy = try allocator.dupe(u8, current_fd.items);
+                    current_fd.clearAndFree(allocator);
+                }
 
-                const func = try allocator.dupe(u8, stripped_val);
-                current_func.clearAndFree(allocator);
-
-                const zig_st: s.FuncAndDefinition = .{ .docstring = fd, .func = func };
+                const zig_st: s.FuncAndDefinition = .{
+                    .func = func_copy,
+                    .docstring = if (fd_copy != null) fd_copy else null,
+                };
                 try data.append(allocator, zig_st);
             } else try current_func.append(allocator, byte);
         }
