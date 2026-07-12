@@ -13,21 +13,24 @@ pub const GoObjectContext = struct {
     comment_func_found: bool = false,
 };
 
+pub const TargetFiles = struct {
+    py_target_file: ?std.fs.File,
+    go_target_file: ?std.fs.File,
+    zig_target_file: ?std.fs.File,
+};
+
 pub const File = struct {
     fd: std.fs.File,
-    target_file: ?std.fs.File,
+    target_files: TargetFiles,
     file_size: u64,
 };
 
-pub const PythonFuncAndDoc = struct {
+pub const FuncAndDefinition = struct {
     func: ?[]u8,
     docstring: ?[]u8,
 };
 
-pub const GoFuncAndDefinition = struct {
-    func: ?[]u8,
-    docstring: ?[]u8,
-};
+pub const FileTypes = enum(u8) { go, python, zig };
 
 // pub const PythonData = struct {
 //     data: std.ArrayList(PythonFuncAndDoc),

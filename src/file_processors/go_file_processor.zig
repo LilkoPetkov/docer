@@ -7,70 +7,75 @@ const t = std.testing;
 
 const s = @import("../schemas/schemas.zig");
 
-fn isComment(byte: u8, idx: usize, file_content_buf: *[]u8) bool {
-    return byte == 0x2F and
-        idx + 1 < file_content_buf.*.len and
-        file_content_buf.*[idx + 1] == 0x2F;
-}
+pub const goByteChecks = struct {
+    file_content_buf: *[]u8,
 
-fn nextBytesComment(idx: usize, file_content_buf: *[]u8) bool {
-    return idx + 2 < file_content_buf.*.len and
-        file_content_buf.*[idx + 1] == 0x2F and
-        file_content_buf.*[idx + 2] == 0x2F;
-}
+    fn isComment(self: @This(), byte: u8, idx: usize) bool {
+        return byte == 0x2F and
+            idx + 1 < self.file_content_buf.*.len and
+            self.file_content_buf.*[idx + 1] == 0x2F;
+    }
 
-fn nextBytesFunc(idx: usize, file_content_buf: *[]u8) bool {
-    return idx + 5 < file_content_buf.*.len and
-        file_content_buf.*[idx + 1] == 0x66 and
-        file_content_buf.*[idx + 2] == 0x75 and
-        file_content_buf.*[idx + 3] == 0x6E and
-        file_content_buf.*[idx + 4] == 0x63 and
-        file_content_buf.*[idx + 5] == 0x20;
-}
+    fn nextBytesComment(self: @This(), idx: usize) bool {
+        return idx + 2 < self.file_content_buf.*.len and
+            self.file_content_buf.*[idx + 1] == 0x2F and
+            self.file_content_buf.*[idx + 2] == 0x2F;
+    }
 
-fn currentBytesFunc(byte: u8, idx: usize, file_content_buf: *[]u8) bool {
-    return byte == 0x66 and
-        idx + 4 < file_content_buf.*.len and
-        file_content_buf.*[idx + 1] == 0x75 and
-        file_content_buf.*[idx + 2] == 0x6E and
-        file_content_buf.*[idx + 3] == 0x63 and
-        file_content_buf.*[idx + 4] == 0x20;
-}
+    fn isNextBytesFunc(self: @This(), idx: usize) bool {
+        return idx + 5 < self.file_content_buf.*.len and
+            self.file_content_buf.*[idx + 1] == 0x66 and
+            self.file_content_buf.*[idx + 2] == 0x75 and
+            self.file_content_buf.*[idx + 3] == 0x6E and
+            self.file_content_buf.*[idx + 4] == 0x63 and
+            self.file_content_buf.*[idx + 5] == 0x20;
+    }
 
-fn isFuncEnd(byte: u8, idx: usize, file_content_buf: *[]u8) bool {
-    return byte == 0x7B and
-        idx + 1 < file_content_buf.*.len and
-        (file_content_buf.*[idx + 1] == 0x0A or
-            (file_content_buf.*[idx + 1] == 0x7D and
-                idx + 2 < file_content_buf.*.len and
-                file_content_buf.*[idx + 2] == 0x0A));
-}
+    fn isCurrentBytesFunc(self: @This(), byte: u8, idx: usize) bool {
+        return byte == 0x66 and
+            idx + 4 < self.file_content_buf.*.len and
+            self.file_content_buf.*[idx + 1] == 0x75 and
+            self.file_content_buf.*[idx + 2] == 0x6E and
+            self.file_content_buf.*[idx + 3] == 0x63 and
+            self.file_content_buf.*[idx + 4] == 0x20;
+    }
 
-pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFuncAndDefinition) {
+    fn isFuncEnd(self: @This(), byte: u8, idx: usize) bool {
+        return byte == 0x7B and
+            idx + 1 < self.file_content_buf.*.len and
+            (self.file_content_buf.*[idx + 1] == 0x0A or
+                (self.file_content_buf.*[idx + 1] == 0x7D and
+                    idx + 2 < self.file_content_buf.*.len and
+                    self.file_content_buf.*[idx + 2] == 0x0A));
+    }
+};
+
+pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
+
+    var ctx: s.GoObjectContext = .{};
+    const check_ctx: goByteChecks = .{ .file_content_buf = &file_content_buf };
 
     var current_func: std.ArrayList(u8) = try .initCapacity(allocator, 64);
     defer current_func.deinit(allocator);
     var current_fd: std.ArrayList(u8) = try .initCapacity(allocator, 128);
     defer current_fd.deinit(allocator);
 
-    var data: std.ArrayList(s.GoFuncAndDefinition) = try .initCapacity(allocator, 1024);
-
-    var ctx: s.GoObjectContext = .{};
+    var data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
 
     for (file_content_buf, 0..) |byte, idx| {
-        if (isComment(byte, idx, &file_content_buf)) {
+        if (check_ctx.isComment(byte, idx)) {
             try current_fd.append(allocator, byte);
             ctx.comment_or_fd_found = true;
         } else if (ctx.comment_or_fd_found) {
             try current_fd.append(allocator, byte);
 
             if (byte == 0x0A) {
-                if (nextBytesComment(idx, &file_content_buf)) {
+                if (check_ctx.nextBytesComment(idx)) {
                     continue;
-                } else if (nextBytesFunc(idx, &file_content_buf)) {
+                } else if (check_ctx.isNextBytesFunc(idx)) {
                     ctx.comment_func_found = true;
                     ctx.comment_or_fd_found = false;
                 } else {
@@ -79,16 +84,14 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                 }
             }
         } else if (ctx.comment_func_found or
-            currentBytesFunc(byte, idx, &file_content_buf))
+            check_ctx.isCurrentBytesFunc(byte, idx))
         {
             try current_func.append(allocator, byte);
             ctx.comment_func_found = false;
             ctx.func_found = true;
         } else if (ctx.func_found) {
-            if (isFuncEnd(byte, idx, &file_content_buf)) {
-                try current_func.append(allocator, '\n');
-
-                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[2]u8{ '\n', ' ' });
+            if (check_ctx.isFuncEnd(byte, idx)) {
+                const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
                 const func_copy = try allocator.dupe(u8, stripped_val);
 
                 current_func.clearAndFree(allocator);
@@ -102,7 +105,7 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.GoFun
                 ctx.func_found = false;
                 ctx.comment_func_found = false;
 
-                const go_file: s.GoFuncAndDefinition = .{
+                const go_file: s.FuncAndDefinition = .{
                     .func = func_copy,
                     .docstring = if (fd_copy != null) fd_copy else null,
                 };

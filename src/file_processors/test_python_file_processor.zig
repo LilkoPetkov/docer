@@ -13,7 +13,11 @@ test "test function with docstring" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
@@ -41,7 +45,11 @@ test "test function without docstring" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
@@ -61,7 +69,11 @@ test "test function with docstring as last entry" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
@@ -89,7 +101,11 @@ test "test multiple functions with docstrings" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
@@ -141,7 +157,11 @@ test "test multiple functions without docstrings" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
@@ -175,7 +195,11 @@ test "test single function multiline string no docstring" {
     var f: s.File = .{
         .fd = file,
         .file_size = file_size,
-        .target_file = null,
+        .target_files = .{
+            .go_target_file = null,
+            .py_target_file = null,
+            .zig_target_file = null,
+        },
     };
 
     var python_data = try pfp.processPythonFile(ta, &f);
