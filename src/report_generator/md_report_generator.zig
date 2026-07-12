@@ -7,7 +7,7 @@ const s = @import("../schemas/schemas.zig");
 pub fn generateReport(allocator: Allocator, data: s.FuncAndDefinition, target_files: s.TargetFiles, file_type: s.FileTypes) !void {
     const tmpl: []const u8 = try std.fmt.allocPrint(
         allocator,
-        \\```bash
+        \\```{s}
         \\{s}
         \\{s}
         \\```
