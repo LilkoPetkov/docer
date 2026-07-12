@@ -7,12 +7,12 @@ const s = @import("../schemas/schemas.zig");
 pub fn generateReport(allocator: Allocator, data: s.FuncAndDefinition, target_files: s.TargetFiles, file_type: s.FileTypes) !void {
     const tmpl: []const u8 = try std.fmt.allocPrint(
         allocator,
-        \\```bash
+        \\```{s}
         \\{s}
         \\{s}
         \\```
     ++ "\n",
-        .{ if (data.docstring != null) data.docstring.? else "> function definition missing", data.func.? },
+        .{ @tagName(file_type), if (data.docstring != null) data.docstring.? else "**UNDOCUMENTED**", data.func.? },
     );
     defer allocator.free(tmpl);
 
