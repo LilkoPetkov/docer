@@ -12,7 +12,7 @@ pub fn generateReport(allocator: Allocator, data: s.FuncAndDefinition, target_fi
         \\{s}
         \\```
     ++ "\n",
-        .{ if (data.docstring != null) data.docstring.? else "> function definition missing", data.func.? },
+        .{ @tagName(file_type), if (data.docstring != null) data.docstring.? else "> function definition missing", data.func.? },
     );
     defer allocator.free(tmpl);
 
