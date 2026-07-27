@@ -35,3 +35,8 @@ pub const FileTypes = enum(u8) { go, python, zig };
 // pub const PythonData = struct {
 //     data: std.ArrayList(PythonFuncAndDoc),
 // };
+
+pub const Args = struct {
+    short_path: []const u8 = "-p",
+    long_path: []const u8 = "--path",
+};

@@ -7,6 +7,7 @@ const Allocator = std.mem.Allocator;
 const s = @import("schemas/schemas.zig");
 const report_generator = @import("report_generator/md_report_generator.zig");
 const tf_manager = @import("report_generator/target_file_manager.zig");
+const args = @import("args/args_processor.zig");
 
 const pfp = @import("file_processors/python_file_processor.zig");
 const gfp = @import("file_processors/go_file_processor.zig");
@@ -21,20 +22,23 @@ test {
     std.testing.refAllDecls(zig_tests);
 }
 
-const TARGET_DIRECTORY: []const u8 = "./tests";
-
 pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var dir = try std.fs.cwd().openDir(TARGET_DIRECTORY, .{ .iterate = true });
+    const TARGET_DIRECTORY = try args.processArgs(allocator);
+    defer allocator.free(TARGET_DIRECTORY);
+
+    var dir = std.fs.cwd().openDir(TARGET_DIRECTORY, .{ .iterate = true }) catch |err| {
+        return err;
+    };
     defer dir.close();
 
     var it = try dir.walk(allocator);
     defer it.deinit();
 
-    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}.md", .{std.time.timestamp()});
+    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}", .{std.time.timestamp()});
     var target_dir = std.fs.cwd().makeOpenPath(dir_name, .{}) catch |err| {
         log.err("Report directory could not be created: {}", .{err});
         return err;

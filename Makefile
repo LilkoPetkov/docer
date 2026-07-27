@@ -4,7 +4,7 @@
 build-run: build-safe run ## Build and run the binary with ReleaseSafe flag
 
 run: ## Run the built binary
-	./zig-out/bin/docer
+	./zig-out/bin/docer --path ./tests
 
 test: ## Build and test the project
 	zig build -Doptimize=ReleaseSafe test --summary new
