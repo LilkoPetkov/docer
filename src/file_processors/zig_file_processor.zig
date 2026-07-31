@@ -6,6 +6,7 @@ const endsWith = std.ascii.endsWithIgnoreCase;
 const t = std.testing;
 
 const s = @import("../schemas/schemas.zig");
+const report_generator = @import("../report_generator/md_report_generator.zig");
 
 pub const zigByteChecks = struct {
     file_content_buf: *[]u8,
@@ -61,7 +62,7 @@ pub const zigByteChecks = struct {
     }
 };
 
-pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
+pub fn processZigFile(allocator: Allocator, file: *s.File, target_files: s.TargetFiles) !void {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
@@ -72,8 +73,6 @@ pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.Func
     defer current_func.deinit(allocator);
     var current_fd: std.ArrayList(u8) = try .initCapacity(allocator, 128);
     defer current_fd.deinit(allocator);
-
-    var data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
 
     var fd_found: bool = false;
     var comment_func_found: bool = false;
@@ -104,24 +103,17 @@ pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.Func
         } else if (func_found) {
             if (check_ctx.isFuncEnd(byte, idx)) {
                 const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
-                const func_copy = try allocator.dupe(u8, stripped_val);
-                current_func.clearAndFree(allocator);
                 func_found = false;
 
-                var fd_copy: ?[]u8 = null;
-                if (current_fd.items.len > 0) {
-                    fd_copy = try allocator.dupe(u8, current_fd.items);
-                    current_fd.clearAndFree(allocator);
-                }
-
-                const zig_st: s.FuncAndDefinition = .{
-                    .func = func_copy,
-                    .docstring = if (fd_copy != null) fd_copy else null,
+                const zig_data: s.FuncAndDefinition = .{
+                    .func = stripped_val,
+                    .docstring = if (current_fd.items.len > 0) current_fd.items else null,
                 };
-                try data.append(allocator, zig_st);
+                try report_generator.generateReport(allocator, zig_data, target_files, .zig);
+
+                current_func.clearAndFree(allocator);
+                current_fd.clearAndFree(allocator);
             } else try current_func.append(allocator, byte);
         }
     }
-
-    return data;
 }

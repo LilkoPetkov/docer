@@ -5,6 +5,7 @@ const startsWith = std.ascii.startsWithIgnoreCase;
 const endsWith = std.ascii.endsWithIgnoreCase;
 const t = std.testing;
 
+const report_generator = @import("../report_generator/md_report_generator.zig");
 const s = @import("../schemas/schemas.zig");
 
 pub const goByteChecks = struct {
@@ -50,7 +51,7 @@ pub const goByteChecks = struct {
     }
 };
 
-pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
+pub fn processGoFile(allocator: Allocator, file: *s.File, target_files: s.TargetFiles) !void {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
@@ -62,8 +63,6 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncA
     defer current_func.deinit(allocator);
     var current_fd: std.ArrayList(u8) = try .initCapacity(allocator, 128);
     defer current_fd.deinit(allocator);
-
-    var data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
 
     for (file_content_buf, 0..) |byte, idx| {
         if (check_ctx.isComment(byte, idx)) {
@@ -92,30 +91,22 @@ pub fn processGoFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncA
         } else if (ctx.func_found) {
             if (check_ctx.isFuncEnd(byte, idx)) {
                 const stripped_val = std.mem.trimEnd(u8, current_func.items, &[1]u8{' '});
-                const func_copy = try allocator.dupe(u8, stripped_val);
-
-                current_func.clearAndFree(allocator);
-
-                var fd_copy: ?[]u8 = null;
-                if (current_fd.items.len > 0) {
-                    fd_copy = try allocator.dupe(u8, current_fd.items);
-                    current_fd.clearAndFree(allocator);
-                }
 
                 ctx.func_found = false;
                 ctx.comment_func_found = false;
 
-                const go_file: s.FuncAndDefinition = .{
-                    .func = func_copy,
-                    .docstring = if (fd_copy != null) fd_copy else null,
+                const go_data: s.FuncAndDefinition = .{
+                    .func = stripped_val,
+                    .docstring = if (current_fd.items.len > 0) current_fd.items else null,
                 };
-                try data.append(allocator, go_file);
+                try report_generator.generateReport(allocator, go_data, target_files, .go);
+
+                current_fd.clearAndFree(allocator);
+                current_func.clearAndFree(allocator);
                 continue;
             }
 
             try current_func.append(allocator, byte);
         }
     }
-
-    return data;
 }

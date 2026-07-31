@@ -81,29 +81,11 @@ pub fn main() !void {
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".go")) {
             go_target_file_created = true;
 
-            var go_data = try gfp.processGoFile(allocator, &f);
-
-            for (go_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_files, .go);
-
-                if (item.func != null) allocator.free(item.func.?);
-                if (item.docstring != null) allocator.free(item.docstring.?);
-            }
-
-            go_data.deinit(allocator);
+            try gfp.processGoFile(allocator, &f, target_files);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".zig")) {
             zig_target_file_created = true;
 
-            var zig_data = try zfp.processZigFile(allocator, &f);
-
-            for (zig_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_files, .zig);
-
-                if (item.func != null) allocator.free(item.func.?);
-                if (item.docstring != null) allocator.free(item.docstring.?);
-            }
-
-            zig_data.deinit(allocator);
+            try zfp.processZigFile(allocator, &f, target_files);
         }
 
         fd.close();

@@ -26,7 +26,7 @@ pub const File = struct {
 };
 
 pub const FuncAndDefinition = struct {
-    func: ?[]u8,
+    func: ?[]const u8,
     docstring: ?[]u8,
 };
 
