@@ -77,16 +77,7 @@ pub fn main() !void {
         if (std.ascii.endsWithIgnoreCase(file_name, ".py")) {
             python_target_file_created = true;
 
-            var python_data = try pfp.processPythonFile(allocator, &f);
-
-            for (python_data.items) |item| {
-                try report_generator.generateReport(allocator, item, target_files, .python);
-
-                if (item.func != null) allocator.free(item.func.?);
-                if (item.docstring != null) allocator.free(item.docstring.?);
-            }
-
-            python_data.deinit(allocator);
+            try pfp.processPythonFile(allocator, &f, target_files);
         } else if (std.ascii.endsWithIgnoreCase(file_name, ".go")) {
             go_target_file_created = true;
 

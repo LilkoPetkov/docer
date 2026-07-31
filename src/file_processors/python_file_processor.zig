@@ -3,6 +3,7 @@ const print = std.debug.print;
 const Allocator = std.mem.Allocator;
 
 const s = @import("../schemas/schemas.zig");
+const report_generator = @import("../report_generator/md_report_generator.zig");
 
 pub const pythonByteChecks = struct {
     file_content_buf: *[]u8,
@@ -31,12 +32,11 @@ pub const pythonByteChecks = struct {
     }
 };
 
-pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
+pub fn processPythonFile(allocator: Allocator, file: *s.File, target_files: s.TargetFiles) !void {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
     _ = try file.fd.read(file_content_buf);
 
-    var python_data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
     var func_data: std.ArrayList(u8) = try .initCapacity(allocator, 32);
     defer func_data.deinit(allocator);
     var func_doc_string: std.ArrayList(u8) = try .initCapacity(allocator, 256);
@@ -48,11 +48,10 @@ pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.F
     for (file_content_buf, 0..) |byte, idx| {
         if (context.func_recorded) {
             if (check_ctx.isNotCommentLineQuote(byte, context.doc_string_found)) {
-                const func: []u8 = try allocator.dupe(u8, func_data.items);
-                func_data.clearAndFree(allocator);
-                const pfad: s.FuncAndDefinition = .{ .docstring = null, .func = func };
-                try python_data.append(allocator, pfad);
+                const pfad: s.FuncAndDefinition = .{ .docstring = null, .func = func_data.items };
+                try report_generator.generateReport(allocator, pfad, target_files, .python);
 
+                func_data.clearAndFree(allocator);
                 context.func_recorded = false;
             } else if (check_ctx.isDocString(byte, idx)) {
                 if (!context.doc_string_found) {
@@ -61,14 +60,11 @@ pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.F
                 } else {
                     try func_doc_string.appendNTimes(allocator, 0x22, 3);
 
-                    const func: []u8 = try allocator.dupe(u8, func_data.items);
-                    const dc: []u8 = try allocator.dupe(u8, func_doc_string.items);
+                    const pfad: s.FuncAndDefinition = .{ .docstring = func_data.items, .func = func_doc_string.items };
+                    try report_generator.generateReport(allocator, pfad, target_files, .python);
 
                     func_data.clearAndFree(allocator);
                     func_doc_string.clearAndFree(allocator);
-
-                    const pfad: s.FuncAndDefinition = .{ .docstring = dc, .func = func };
-                    try python_data.append(allocator, pfad);
 
                     context.doc_string_found = false;
                     context.func_recorded = false;
@@ -98,6 +94,4 @@ pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.F
             context.func_found = true;
         }
     }
-
-    return python_data;
 }
