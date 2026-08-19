@@ -1,6 +1,7 @@
 .zig-cache/
 zig-out/
 *.o
+REPORT_*/
 tests/python_test/langflow
 tests/go_test/external-secrets
 tests/zig_tests/zig-core-utils

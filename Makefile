@@ -4,7 +4,7 @@
 build-run: build-safe run ## Build and run the binary with ReleaseSafe flag
 
 run: ## Run the built binary
-	./zig-out/bin/docer
+	./zig-out/bin/docer --path ./tests
 
 test: ## Build and test the project
 	zig build -Doptimize=ReleaseSafe test --summary new
@@ -21,6 +21,8 @@ build-fast: ## Build with `ReleaseFast` flag
 clean: ## Clean all temporary zig resources
 	rm -r .zig-cache
 	rm -r zig-out
+	rm -r REPORT_*
+	rm -r .zig-cache
 	
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
