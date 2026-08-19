@@ -3,11 +3,30 @@ const t = std.testing;
 const s = @import("../schemas/schemas.zig");
 const zfp = @import("zig_file_processor.zig");
 
+const TestCtx = struct {
+    io: std.Io,
+    dir: std.Io.Dir,
+
+    fn init() !@This() {
+        const io = std.testing.io;
+        const dir = try std.Io.Dir.cwd().openDir(io, "./tests/zig_test", .{ .iterate = true });
+
+        return TestCtx{ .io = io, .dir = dir };
+    }
+
+    fn destroy(self: @This()) void {
+        self.dir.close(self.io);
+    }
+};
+
 test "test function without function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/zig_tests/test_single_func_no_fd.zig", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_func_no_fd.zig", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_func_no_fd.zig", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -19,7 +38,7 @@ test "test function without function definition" {
         },
     };
 
-    var zig_data = try zfp.processZigFile(ta, &f);
+    var zig_data = try zfp.processZigFile(tc.io, ta, &f);
     defer zig_data.deinit(ta);
     const expected_function = "pub fn main() !void";
 
@@ -30,8 +49,11 @@ test "test function without function definition" {
 test "test functions without function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/zig_tests/test_multiple_funcs_no_fd.zig", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_funcs_no_fd.zig", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_funcs_no_fd.zig", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -43,7 +65,7 @@ test "test functions without function definition" {
         },
     };
 
-    var zig_data = try zfp.processZigFile(ta, &f);
+    var zig_data = try zfp.processZigFile(tc.io, ta, &f);
     defer zig_data.deinit(ta);
     const first_expected_function = "pub fn main() !void";
 
@@ -68,8 +90,11 @@ test "test functions without function definition" {
 test "test function with function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/zig_tests/test_single_func_fd.zig", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_func_fd.zig", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_func_fd.zig", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -81,7 +106,7 @@ test "test function with function definition" {
         },
     };
 
-    var zig_data = try zfp.processZigFile(ta, &f);
+    var zig_data = try zfp.processZigFile(tc.io, ta, &f);
     defer zig_data.deinit(ta);
 
     const expected_function = "pub fn main() !void";
@@ -103,8 +128,11 @@ test "test function with function definition" {
 test "test functions with function definitions" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/zig_tests/test_multiple_funcs_fd.zig", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_funcs_fd.zig", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_funcs_fd.zig", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -116,7 +144,7 @@ test "test functions with function definitions" {
         },
     };
 
-    var zig_data = try zfp.processZigFile(ta, &f);
+    var zig_data = try zfp.processZigFile(tc.io, ta, &f);
     defer zig_data.deinit(ta);
 
     const first_expected_function = "pub fn testMain() !void";
