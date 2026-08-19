@@ -34,14 +34,16 @@ pub fn main(init: std.process.Init) !void {
     defer allocator.free(TARGET_DIRECTORY);
     arg_iterator.deinit();
 
-    var dir = try std.Io.Dir.cwd().openDir(io, ".", .{ .iterate = true });
+    var dir = try std.Io.Dir.cwd().openDir(io, TARGET_DIRECTORY, .{ .iterate = true });
+    defer dir.close(io);
+    var report_dir = try std.Io.Dir.cwd().openDir(io, ".", .{});
     defer dir.close(io);
 
     var it = try dir.walk(allocator);
     defer it.deinit();
 
-    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}.md", .{std.time.epoch.unix});
-    var target_dir = dir.createDirPathOpen(io, dir_name, .{}) catch |err| {
+    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}", .{std.Io.Clock.real.now(io)});
+    var target_dir = report_dir.createDirPathOpen(io, dir_name, .{}) catch |err| {
         log.err("Report directory could not be created: {}", .{err});
         return err;
     };
