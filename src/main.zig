@@ -22,28 +22,24 @@ test {
     std.testing.refAllDecls(zig_tests);
 }
 
-pub fn main(init: std.process.Init) !void {
+pub fn main() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var arg_iterator = init.minimal.args.iterate();
-    const io = init.io;
-
-    const TARGET_DIRECTORY = try args.processArgs(allocator, &arg_iterator);
+    const TARGET_DIRECTORY = try args.processArgs(allocator);
     defer allocator.free(TARGET_DIRECTORY);
-    arg_iterator.deinit();
 
-    var dir = try std.Io.Dir.cwd().openDir(io, TARGET_DIRECTORY, .{ .iterate = true });
-    defer dir.close(io);
-    var report_dir = try std.Io.Dir.cwd().openDir(io, ".", .{});
-    defer dir.close(io);
+    var dir = std.fs.cwd().openDir(TARGET_DIRECTORY, .{ .iterate = true }) catch |err| {
+        return err;
+    };
+    defer dir.close();
 
     var it = try dir.walk(allocator);
     defer it.deinit();
 
-    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}", .{std.Io.Clock.real.now(io)});
-    var target_dir = report_dir.createDirPathOpen(io, dir_name, .{}) catch |err| {
+    const dir_name: []const u8 = try std.fmt.allocPrint(allocator, "REPORT_{d}", .{std.time.timestamp()});
+    var target_dir = std.fs.cwd().makeOpenPath(dir_name, .{}) catch |err| {
         log.err("Report directory could not be created: {}", .{err});
         return err;
     };
