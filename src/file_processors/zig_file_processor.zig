@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const startsWith = std.ascii.startsWithIgnoreCase;
 const endsWith = std.ascii.endsWithIgnoreCase;
 const t = std.testing;
@@ -61,10 +62,12 @@ pub const zigByteChecks = struct {
     }
 };
 
-pub fn processZigFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
+pub fn processZigFile(io: Io, allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
-    _ = try file.fd.read(file_content_buf);
+
+    var r = file.*.fd.reader(io, &.{});
+    try r.interface.readSliceAll(file_content_buf);
 
     const check_ctx: zigByteChecks = .{ .file_content_buf = &file_content_buf };
 

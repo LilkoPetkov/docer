@@ -3,12 +3,30 @@ const t = std.testing;
 const s = @import("../schemas/schemas.zig");
 const pfp = @import("python_file_processor.zig");
 
-// Tests
+const TestCtx = struct {
+    io: std.Io,
+    dir: std.Io.Dir,
+
+    fn init() !@This() {
+        const io = std.testing.io;
+        const dir = try std.Io.Dir.cwd().openDir(io, "./tests/python_test", .{ .iterate = true });
+
+        return TestCtx{ .io = io, .dir = dir };
+    }
+
+    fn destroy(self: @This()) void {
+        self.dir.close(self.io);
+    }
+};
+
 test "test function with docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_ds.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_function_ds.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_function_ds.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -20,7 +38,7 @@ test "test function with docstring" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def fib(x: int) -> int";
     const expected_docstring =
@@ -39,8 +57,11 @@ test "test function with docstring" {
 test "test function without docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_no_ds.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_function_no_ds.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_function_no_ds.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -52,7 +73,7 @@ test "test function without docstring" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def main() -> None";
 
@@ -63,8 +84,11 @@ test "test function without docstring" {
 test "test function with docstring as last entry" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_last_entry_ds.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_function_last_entry_ds.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_function_last_entry_ds.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -76,7 +100,7 @@ test "test function with docstring as last entry" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
     const expected_function = "def main() -> None";
     const expected_docstring =
@@ -95,8 +119,11 @@ test "test function with docstring as last entry" {
 test "test multiple functions with docstrings" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_multiple_functions_with_doc_strings.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_functions_with_doc_strings.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_functions_with_doc_strings.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -108,7 +135,7 @@ test "test multiple functions with docstrings" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def test01() -> None";
@@ -151,8 +178,11 @@ test "test multiple functions with docstrings" {
 test "test multiple functions without docstrings" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_multiple_functions_wihtout_docstrings.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_functions_wihtout_docstrings.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_functions_wihtout_docstrings.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -164,7 +194,7 @@ test "test multiple functions without docstrings" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def test01() -> None";
@@ -189,8 +219,11 @@ test "test multiple functions without docstrings" {
 test "test single function multiline string no docstring" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/python_test/test_single_function_no_ds_ml_string.py", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_function_no_ds_ml_string.py", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_function_no_ds_ml_string.py", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -202,7 +235,7 @@ test "test single function multiline string no docstring" {
         },
     };
 
-    var python_data = try pfp.processPythonFile(ta, &f);
+    var python_data = try pfp.processPythonFile(tc.io, ta, &f);
     defer python_data.deinit(ta);
 
     const expected_function01 = "def main() -> None";

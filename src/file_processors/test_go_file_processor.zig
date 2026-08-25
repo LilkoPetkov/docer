@@ -3,11 +3,30 @@ const t = std.testing;
 const s = @import("../schemas/schemas.zig");
 const gfp = @import("go_file_processor.zig");
 
+const TestCtx = struct {
+    io: std.Io,
+    dir: std.Io.Dir,
+
+    fn init() !@This() {
+        const io = std.testing.io;
+        const dir = try std.Io.Dir.cwd().openDir(io, "./tests/go_test", .{ .iterate = true });
+
+        return TestCtx{ .io = io, .dir = dir };
+    }
+
+    fn destroy(self: @This()) void {
+        self.dir.close(self.io);
+    }
+};
+
 test "test function without function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/go_test/test_single_func_no_fd.go", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_func_no_fd.go", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_func_no_fd.go", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -19,7 +38,7 @@ test "test function without function definition" {
         },
     };
 
-    var go_data = try gfp.processGoFile(ta, &f);
+    var go_data = try gfp.processGoFile(tc.io, ta, &f);
     defer go_data.deinit(ta);
     const expected_function = "func main(x, x, x int)";
 
@@ -30,8 +49,11 @@ test "test function without function definition" {
 test "test function with function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/go_test/test_single_func_fd.go", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_single_func_fd.go", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_single_func_fd.go", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -43,7 +65,7 @@ test "test function with function definition" {
         },
     };
 
-    var go_data = try gfp.processGoFile(ta, &f);
+    var go_data = try gfp.processGoFile(tc.io, ta, &f);
     defer go_data.deinit(ta);
     const expected_function = "func main(x, y int) string";
     const expected_fd = "// Main entrypoint // \\\\ to the program\n";
@@ -58,8 +80,11 @@ test "test function with function definition" {
 test "test functions without function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/go_test/test_multiple_funcs_no_fd.go", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_funcs_no_fd.go", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_funcs_no_fd.go", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -71,7 +96,7 @@ test "test functions without function definition" {
         },
     };
 
-    var go_data = try gfp.processGoFile(ta, &f);
+    var go_data = try gfp.processGoFile(tc.io, ta, &f);
     defer go_data.deinit(ta);
 
     const first_expected_function = "func genericFunc[T any](x, y T) T";
@@ -91,8 +116,11 @@ test "test functions without function definition" {
 test "test functions with function definition" {
     const ta = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("tests/go_test/test_multiple_funcs_fd.go", .{});
-    const file_size: usize = (try file.stat()).size;
+    const tc = try TestCtx.init();
+    defer tc.destroy();
+
+    const file: std.Io.File = try tc.dir.openFile(tc.io, "test_multiple_funcs_fd.go", .{});
+    const file_size: usize = (try tc.dir.statFile(tc.io, "test_multiple_funcs_fd.go", .{})).size;
 
     var f: s.File = .{
         .fd = file,
@@ -104,7 +132,7 @@ test "test functions with function definition" {
         },
     };
 
-    var go_data = try gfp.processGoFile(ta, &f);
+    var go_data = try gfp.processGoFile(tc.io, ta, &f);
     defer go_data.deinit(ta);
 
     const first_expected_function = "func main()";

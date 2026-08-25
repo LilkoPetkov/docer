@@ -1,6 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const s = @import("../schemas/schemas.zig");
 
@@ -31,10 +32,12 @@ pub const pythonByteChecks = struct {
     }
 };
 
-pub fn processPythonFile(allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
+pub fn processPythonFile(io: Io, allocator: Allocator, file: *s.File) !std.ArrayList(s.FuncAndDefinition) {
     var file_content_buf = try allocator.alloc(u8, file.file_size);
     defer allocator.free(file_content_buf);
-    _ = try file.fd.read(file_content_buf);
+
+    var r = file.*.fd.reader(io, &.{});
+    try r.interface.readSliceAll(file_content_buf);
 
     var python_data: std.ArrayList(s.FuncAndDefinition) = try .initCapacity(allocator, 1024);
     var func_data: std.ArrayList(u8) = try .initCapacity(allocator, 32);

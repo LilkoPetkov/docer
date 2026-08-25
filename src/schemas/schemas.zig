@@ -14,13 +14,13 @@ pub const GoObjectContext = struct {
 };
 
 pub const TargetFiles = struct {
-    py_target_file: ?std.fs.File,
-    go_target_file: ?std.fs.File,
-    zig_target_file: ?std.fs.File,
+    py_target_file: ?std.Io.File,
+    go_target_file: ?std.Io.File,
+    zig_target_file: ?std.Io.File,
 };
 
 pub const File = struct {
-    fd: std.fs.File,
+    fd: std.Io.File,
     target_files: TargetFiles,
     file_size: u64,
 };
